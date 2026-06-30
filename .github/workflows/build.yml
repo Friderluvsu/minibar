@@ -1,0 +1,40 @@
+name: Build and Release Minibar
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-14
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Build App
+      run: |
+        xcodebuild -project "Minibar.xcodeproj" \
+                   -scheme "Minibar" \
+                   -configuration Release \
+                   -derivedDataPath build \
+                   CODE_SIGNING_ALLOWED=NO \
+                   CODE_SIGNING_REQUIRED=NO \
+                   clean build
+                   
+    - name: Package App
+      run: |
+        cd build/Build/Products/Release
+        zip -r Minibar.zip Minibar.app
+        
+    - name: Create Release and Upload Asset
+      uses: softprops/action-gh-release@v2
+      with:
+        files: build/Build/Products/Release/Minibar.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
